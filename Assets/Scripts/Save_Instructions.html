@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Save.cs Setup Instructions</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+  h1 { color: #2c3e50; }
+  h2 { color: #2980b9; border-bottom: 2px solid #2980b9; padding-bottom: 4px; }
+  code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+  pre { background: #f4f4f4; padding: 12px; border-radius: 6px; overflow-x: auto; }
+  .step { background: #eaf4fb; border-left: 4px solid #2980b9; padding: 10px 16px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+  .note { background: #fef9e7; border-left: 4px solid #f39c12; padding: 10px 16px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+</style>
+</head>
+<body>
+
+<h1>Save.cs — High Score Setup Instructions</h1>
+
+<p>The <code>Save.cs</code> script saves the player's best time (time remaining on the clock when winning) to a JSON file. Follow the steps below to wire it up in the Unity Editor.</p>
+
+<h2>Step 1 — Add Save to the Scene</h2>
+<div class="step">
+  <ol>
+    <li>In the <strong>Hierarchy</strong>, create an empty GameObject: <em>GameObject → Create Empty</em>.</li>
+    <li>Name it <strong>SaveManager</strong>.</li>
+    <li>With <strong>SaveManager</strong> selected, click <em>Add Component</em> in the Inspector and add <strong>Save</strong>.</li>
+  </ol>
+  <div class="note">The script uses <code>DontDestroyOnLoad</code>, so it will persist across scenes automatically.</div>
+</div>
+
+<h2>Step 2 — Update GoalTrigger.cs</h2>
+<div class="step">
+  <p>Open <code>GoalTrigger.cs</code> and make the following changes:</p>
+
+  <p><strong>Add a public field for GameManager:</strong></p>
+  <pre>public GameManager gameManager;</pre>
+
+  <p><strong>Inside <code>OnTriggerEnter</code>, before <code>winGame.SetActive(true)</code>, add:</strong></p>
+  <pre>if (Save.instance != null &amp;&amp; gameManager != null)
+    Save.instance.TrySetHighScore(gameManager.timer);</pre>
+
+  <p>The finished method should look like:</p>
+  <pre>void OnTriggerEnter(Collider other)
+{
+    PlayerController player = other.GetComponent&lt;PlayerController&gt;();
+    if (player != null)
+    {
+        if (Save.instance != null &amp;&amp; gameManager != null)
+            Save.instance.TrySetHighScore(gameManager.timer);
+
+        winGame.SetActive(true);
+        Time.timeScale = 0;
+    }
+}</pre>
+</div>
+
+<h2>Step 3 — Assign the GameManager Reference</h2>
+<div class="step">
+  <ol>
+    <li>Select the <strong>GoalTrigger</strong> GameObject in the Hierarchy.</li>
+    <li>In the Inspector you will now see a <strong>Game Manager</strong> field.</li>
+    <li>Drag the GameObject that has your <strong>GameManager</strong> component into that field.</li>
+  </ol>
+</div>
+
+<h2>Step 4 — (Optional) Display the High Score</h2>
+<div class="step">
+  <p>To read the saved high score anywhere in your code (e.g. on the main menu), call:</p>
+  <pre>float best = Save.instance.GetHighScore();</pre>
+  <p>Then display it with a TextMeshPro or UI Text element.</p>
+</div>
+
+<h2>Where is the file saved?</h2>
+<div class="note">
+  The high score is written to <code>Application.persistentDataPath/highscore.json</code>.<br><br>
+  On Windows this is typically:<br>
+  <code>C:\Users\&lt;YourName&gt;\AppData\LocalLow\&lt;CompanyName&gt;\&lt;GameName&gt;\highscore.json</code>
+</div>
+
+</body>
+</html>

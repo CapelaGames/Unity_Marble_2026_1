@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>High Score Name Input — Setup</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 860px; margin: 40px auto; padding: 0 24px; background: #f9f9f9; color: #222; }
+  h1 { color: #2c3e50; }
+  h2 { color: #2980b9; border-bottom: 2px solid #2980b9; padding-bottom: 4px; margin-top: 36px; }
+  code { background: #eee; padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 0.95em; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 0.92em; line-height: 1.5; }
+  .kw  { color: #569cd6; }
+  .cm  { color: #6a9955; }
+  .st  { color: #ce9178; }
+  .tp  { color: #4ec9b0; }
+  .num { color: #b5cea8; }
+  .step { background: #eaf4fb; border-left: 4px solid #2980b9; padding: 10px 16px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+  .note { background: #fef9e7; border-left: 4px solid #f39c12; padding: 10px 16px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+  ol li, ul li { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<h1>High Score Name Input — <code>InputHS.cs</code></h1>
+<p>This script shows a name-entry panel on the win screen only when the player beats the high score. The player types their name and hits Submit to save it.</p>
+
+<h2>The Script — create <code>Assets/Scripts/InputHS.cs</code></h2>
+
+<pre>
+<span class="kw">using</span> UnityEngine;
+<span class="kw">using</span> TMPro;
+
+<span class="kw">public class</span> <span class="tp">InputHS</span> : <span class="tp">MonoBehaviour</span>
+{
+    <span class="kw">public</span> <span class="tp">SaveToFile</span> saveToFile;
+    <span class="kw">public</span> <span class="tp">GameManager</span> gameManager;
+
+    <span class="kw">public</span> <span class="tp">GameObject</span> nameInputPanel;   <span class="cm">// the panel that appears when a new high score is set</span>
+    <span class="kw">public</span> <span class="tp">TMP_InputField</span> nameField;    <span class="cm">// the text input field inside that panel</span>
+
+    <span class="kw">float</span> pendingTime;                  <span class="cm">// stores the score until the player submits a name</span>
+
+    <span class="cm">// Call this from GoalTrigger when the player wins</span>
+    <span class="kw">public void</span> CheckHighScore()
+    {
+        <span class="kw">float</span> timeRemaining = gameManager.timer;
+        <span class="tp">SaveData</span> current = saveToFile.GetHighScore();
+
+        <span class="kw">if</span> (timeRemaining > current.bestTime)
+        {
+            pendingTime = timeRemaining;
+            nameInputPanel.SetActive(<span class="kw">true</span>);   <span class="cm">// show name entry panel</span>
+        }
+    }
+
+    <span class="cm">// Attach this to the Submit button's OnClick event</span>
+    <span class="kw">public void</span> Submit()
+    {
+        <span class="kw">string</span> playerName = nameField.text.Trim();
+
+        <span class="kw">if</span> (playerName == <span class="st">""</span>)
+            playerName = <span class="st">"Player"</span>;   <span class="cm">// fallback if they leave it blank</span>
+
+        saveToFile.NewScore(pendingTime, playerName);
+        nameInputPanel.SetActive(<span class="kw">false</span>);
+    }
+}
+</pre>
+
+<h2>Update GoalTrigger.cs</h2>
+<p>Replace the direct <code>saveToFile.NewScore(...)</code> call with <code>inputHS.CheckHighScore()</code>:</p>
+
+<pre>
+<span class="kw">public class</span> <span class="tp">GoalTrigger</span> : <span class="tp">MonoBehaviour</span>
+{
+    <span class="kw">public</span> <span class="tp">GameObject</span> winGame;
+    <span class="kw">public</span> <span class="tp">GameManager</span> gameManager;
+    <span class="kw">public</span> <span class="tp">InputHS</span> inputHS;           <span class="cm">// replace saveToFile with inputHS</span>
+
+    <span class="kw">void</span> OnTriggerEnter(<span class="tp">Collider</span> other)
+    {
+        <span class="tp">PlayerController</span> player = other.GetComponent&lt;<span class="tp">PlayerController</span>&gt;();
+        <span class="kw">if</span> (player != <span class="kw">null</span>)
+        {
+            inputHS.CheckHighScore();    <span class="cm">// shows name panel only if it's a new record</span>
+            winGame.SetActive(<span class="kw">true</span>);
+            <span class="tp">Time</span>.timeScale = <span class="num">0</span>;
+        }
+    }
+}
+</pre>
+
+<div class="note"><strong>Note:</strong> <code>Time.timeScale = 0</code> pauses the game but UI input fields still work fine — Unity's event system is not affected by timeScale.</div>
+
+<h2>Build the UI in Unity</h2>
+
+<div class="step">
+  <strong>1. Create the Name Input Panel</strong>
+  <ol>
+    <li>In the Hierarchy, right-click the <strong>Canvas</strong> → <em>UI → Panel</em>. Name it <strong>NameInputPanel</strong>.</li>
+    <li>Inside it, add:
+      <ul>
+        <li><em>UI → Text - TextMeshPro</em> — label it <strong>"New High Score! Enter your name:"</strong></li>
+        <li><em>UI → Input Field - TextMeshPro</em> — name it <strong>NameField</strong></li>
+        <li><em>UI → Button - TextMeshPro</em> — label it <strong>Submit</strong></li>
+      </ul>
+    </li>
+    <li>With <strong>NameInputPanel</strong> selected, uncheck the checkbox in the Inspector to <strong>disable it by default</strong>.</li>
+  </ol>
+</div>
+
+<div class="step">
+  <strong>2. Add InputHS to the scene</strong>
+  <ol>
+    <li>Select any persistent GameObject (e.g. your GameManager object).</li>
+    <li>Click <em>Add Component</em> and add <strong>InputHS</strong>.</li>
+    <li>Assign the fields in the Inspector:
+      <ul>
+        <li><strong>Save To File</strong> → drag your SaveToFile GameObject</li>
+        <li><strong>Game Manager</strong> → drag your GameManager GameObject</li>
+        <li><strong>Name Input Panel</strong> → drag <strong>NameInputPanel</strong></li>
+        <li><strong>Name Field</strong> → drag the <strong>NameField</strong> Input Field</li>
+      </ul>
+    </li>
+  </ol>
+</div>
+
+<div class="step">
+  <strong>3. Wire the Submit button</strong>
+  <ol>
+    <li>Select the <strong>Submit</strong> button in the Hierarchy.</li>
+    <li>In the Inspector under <em>On Click ()</em>, click the <strong>+</strong> button.</li>
+    <li>Drag the GameObject that has <strong>InputHS</strong> into the object slot.</li>
+    <li>In the function dropdown, choose <strong>InputHS → Submit()</strong>.</li>
+  </ol>
+</div>
+
+<div class="step">
+  <strong>4. Update GoalTrigger in the Inspector</strong>
+  <ol>
+    <li>Select the GoalTrigger GameObject.</li>
+    <li>Remove the old <strong>Save To File</strong> field (it's gone from the script now).</li>
+    <li>Assign the <strong>Input HS</strong> field → drag the GameObject that has <strong>InputHS</strong>.</li>
+    <li>Assign <strong>Game Manager</strong> as before.</li>
+  </ol>
+</div>
+
+</body>
+</html>
