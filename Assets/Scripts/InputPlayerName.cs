@@ -6,8 +6,6 @@ public class InputPlayerName : MonoBehaviour
     public SaveToFile saveToFile;
     public GameManager gameManager;
 
-    public GameObject nameInputPanel;
-    public TMP_InputField nameField;
     public TMP_Text currentHighScore;
 
     public void CheckHighScore()
@@ -18,19 +16,8 @@ public class InputPlayerName : MonoBehaviour
 
         if (timeRemaining > saveData.bestTime)
         {
-            nameInputPanel.SetActive(true);
+            saveToFile.NewScore(timeRemaining, "No name");
+            currentHighScore.text += "\n" + "New HighScore! " + timeRemaining.ToString("F2") + " seconds";
         }
-    }
-
-    public void Submit()
-    {
-        float timeRemaining = gameManager.timer;
-        string playerName = nameField.text.Trim();
-        if (playerName == "")
-        {
-            playerName = "Player";
-        }
-        saveToFile.NewScore(timeRemaining, playerName);
-        nameInputPanel.SetActive(false);
     }
 }
