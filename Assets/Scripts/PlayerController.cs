@@ -9,7 +9,7 @@ public class PlayerController : MonoBehaviour
 
     public bool isGrounded = false;
 
-    private float speed = 10f;
+    private float speed = 100f;
     private float jumpSpeed = 500f;
 
     private Vector2 moveInput;
@@ -48,29 +48,25 @@ public class PlayerController : MonoBehaviour
     }
 
     private void OnMove(InputValue value)
-
     {
-
         moveInput = value.Get<Vector2>(); // check your position on the axis?
-
     }
 
-    //FixedUpdate() only runs when the physics engine runs
 
     private void FixedUpdate()
-
     {
-        // New - making a new vector, 3 dimensions xyz
-        // the new vector remaps our input, input.x  -> movement on x axis movement.x  input.y  -> movement.z
-        // (this is because Y is 'up' in Unity)
+        // Get the camera's forward and right vectors
+        Vector3 camForward = playerCamera.transform.forward;
+        Vector3 camRight = playerCamera.transform.right;
 
-        // float y = rb.linearVelocity.y;
+        // Flatten them so the player doesn't move up/down when the camera tilts
+        camForward.y = 0;
+        camRight.y = 0;
 
-        Vector3 movement = new Vector3 (moveInput.x, 0f, moveInput.y * speed);
+        //Build movement relative to the camera's orientation
+        Vector3 movement = (camRight * moveInput.x) + (camForward * moveInput.y);
 
-        // Velocity is the speed of our Character (as a vector)
-
-        rb.AddForce(movement * speed);  // Add force is intensity of the physics // speed variable is set at top
+        rb.AddForce(movement * speed); 
 
     }
 
